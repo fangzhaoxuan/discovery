@@ -1,0 +1,20 @@
+server:
+    port: 8810
+    tomcat:
+        max-http-form-post-size: 20971520
+
+spring:
+    profiles:
+        active: dev
+    application:
+        name: discovery
+    datasource:
+        name: localhost
+        url: jdbc:mysql://localhost:3310/discovery?useSSL=false&useUnicode=true&serverTimezone=UTC&autoReconnect=true&allowMultiQueries=true
+        username: root
+        password: 123456
+
+mybatis:
+    mapper-locations: classpath*:com/example/discovery/**/*.xml
+
+
