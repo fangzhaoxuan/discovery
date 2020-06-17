@@ -1,0 +1,67 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    driverClassName: com.mysql.jdbc.Driver
+    druid:
+      url: jdbc:mysql://${RDS_HOST}:3306/${RDS_DATABASE}?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8
+      username: ${RDS_USERNAME}
+      password: ${RDS_PASSWORD}
+      initial-size: 10
+      max-active: 100
+      min-idle: 10
+      max-wait: 60000
+      pool-prepared-statements: true
+      max-pool-prepared-statement-per-connection-size: 20
+      time-between-eviction-runs-millis: 60000
+      min-evictable-idle-time-millis: 300000
+      validation-query: SELECT 1 FROM DUAL
+      test-while-idle: true
+      test-on-borrow: false
+      test-on-return: false
+      stat-view-servlet:
+        enabled: true
+        url-pattern: /druid/*
+        #login-username: admin
+        #login-password: admin
+      filter:
+        stat:
+          log-slow-sql: true
+          slow-sql-millis: 1000
+          merge-sql: true
+        wall:
+          config:
+            multi-statement-allow: true
+  redis:
+    host: ${REDIS_HOST}
+    password: ${REDIS_PASSWORD}
+
+message:
+  msgSwitch: true
+  url: https://api.dingdongcloud.com/v2/sms/single_send
+  apikey: cf3124033088dc46f1597a30b064ddaf
+
+alipay:
+  appId: 2018092761534620
+  merchantPrivateKey: MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDUxC404TirfVxSmDhhtMHF4sfpO0XiWjHSWsAMwtW5pkOvmRs87IawcpmM7GKVUppMZS2PZxJbuUsfIJ7DMyeq17sbj+QLVr0xo03KBJkJLIRbvN28SCaYFP2/eAK8EX4b5yibXH7jmmY/PXVhWTUZcbL3BGU13uH+tzi7Or13GUEYnpEdzfjE4pqFA9toXFuj+v0RVg8XatsUOOYxnmSHMDN+cx6DE9laJWPwnndZQiQDJAin0r1JJNh1J6zGiYy3f55X/3uLXPm6zUAvkdwUT13qD50LeVc+YtzLzV89BKvUf6HlN/xbVecfX2k/7cMFxrX7Y7jenb1maRsEFyPrAgMBAAECggEAMlpzbQRYOw2iCdIIlecHbOOs2B+0/ErIO7ZKeTqrBhK5NheQAK0heyTD/jv7YMd5yNaxH50PFTIW+zjnGd9DZgVEPNOi7qQKhnLVeBf6d9dXQ7bA60xQBfIB04x9aTDinYvpaktLpGXoCNNssitAi9MCvb8GjOdAqN2HyZevOz4KLiMIze2Fms1hW+Qx09QCgEtIvIFKgq8V5KViboYWFkqjQS7onhzX4WRxzUL8rUHLgag5zmGL8wyJMkAwjOSdncEP0MKf0fVVgbv+7URc8vWfJuWZ9ENlzkf49HXm4WL8KzGofDHiDz1aAhCDt5yMN0cQ6emOg/MpPYSFQ1MNQQKBgQD2ehMuydQlyet32Hc4Shr2Z+5e/+IfdytP8gV6wh+qG3mqAAOYAdNThboqgiC6oYLl6rhXULxokXFqnEBeZ+n6ubN/KGaumerokoOyYbGsCQI99ZS9YZKjdFrQ9gEzp60akwGT5uUTW9S/PJXjMSLzJq7OeDbagFH+9a+eXwRNsQKBgQDc/KvzS9mMEUO33NGaCi/+RLOiys8YdgA4DKgYewHe5EHRXJjCZyY2kQnBm06ZOhl7X26B7Spt3LK7WBJnvLfkFWOVTVUeVqvP4Ieahoz/GZ5c6u1oXUKrcVWq6GbN8WlvBUAQvFyk6TLmNCaNWeNGpdTKNy0gKtZN5Q8jMAtmWwKBgQDy8vtrmCfUI8dFN4q0Yl9XWLSe0Yy7RUTdJYt/KE/75d8z0ZW5RLtgTaVmdyP5snALXyTbdEpyrEJmOqQ8KiN5L4ido14rZq4lFx5XO3LdR3f9SM+XKNFY6r0F0ib3GqVHV3YrqmFMhq0a34ZDDlEL6apO/DHdiLTKIrQ74B6m0QKBgE5F3O3fJt4a216Lg15JT3iDgxEdPr9ORIOV0BBjuWTmen2ai60H9hwLwWXnCa7ySkZNpgm1JHsnWdNLvbEqwgOyo8QlUQne7xpBUCamk9hjjZkhyRdXOR8alJplmMxHPu4I8Qk8fqAWzWWGgUU92meSo01Av+YN5jxO7s6q3M7TAoGBAL59esvvFt3Qoje3BCQZYZK3mpLo47jwyd+7Wj3mx1ZgDBQ1jmwTbvA4dQSSsqXzE1jpsw/UBG9iJXiaq3ZWyzDQzlJy07Weq8fy2wShLJWgiF5nLFGOpwk3OHt3kczZGmFGkK1yNfhN6c5mJ1/QIFrsnFxw5OrScaZ2v2ku/hag
+  alipayPublicKey: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAh4w4JHfsLAWBX9We3T6iIivwMXFeSBWKmmIEG5qnGq8qwqxfuXvyzxIjeKWOtzph3RM/XmhNQMMWko2b2rzt1agpA4jd2Rbmc9R85W2edHWAca8GNkQjare3HNS5I0kDjXyrZxy9sJ3c3KUi6gT2mO7MiXPnZb9Ad+M8WxsiYorgqFPps4ncuEE9vMapiODV+jvr+3N0MMR8qgF8WZZ7LWsMyh41yXZmTsk/ZnWIte4NvKsrG2GFPn/zJ9cv54EDqDH6fXuLQAlPEATDESO7HGwfyKbliKxZS5LolghYqaXlJE2hqzmmJ2pYr0TRrlYHxL3HIcT/tj5/iVZAjj9iNQIDAQAB
+  notifyUrl: https://api.51shanzhu.com/v1/notify
+  return_url: https://www.51shanzhu.com/orders/ID/pay/result
+  gatewayUrl: https://openapi.alipay.com/gateway.do
+
+wechatpay:
+  appId: wx399ce4c35a00290f
+  appSecret: d419c10d915fdb6b9be2dc75ec40350f
+  appKey: 981BF84C66A78E328FDE7469F697B4DA
+  mchId: 1503803601
+  notifyUrl: https://api.51shanzhu.com/v1/wechatPaynotify
+  ufdorUrl: https://api.mch.weixin.qq.com/pay/unifiedorder
+  orderQuery: https://api.mch.weixin.qq.com/pay/orderquery
+  clientAccessTokenUrl: https://api.weixin.qq.com/sns/oauth2/access_token?appid=wx399ce4c35a00290f&secret=d419c10d915fdb6b9be2dc75ec40350f&code=CODE&grant_type=authorization_code
+
+taobao:
+  appKey: 25537220
+  appSecret: 045ed248843e6c5f4bb7150352642eb4
+  adzongId: 80491800241

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.discovery.dao.PayDao">
+
+    <resultMap id="order" type="io.thanz.entity.BookingOrderEntity">
+        <result column="discount_amount" property="discountAmount"/>
+        <result column="gmt_create" property="gmtCreate"/>
+    </resultMap>
+    <select id="getOrder" resultMap="order">
+        select discount_amount, gmt_create
+        from booking_order
+        where id = #{id}
+    </select>
+
+    <update id="payBySzc">
+        update user
+        set balance_szc = balance_szc - #{amount}
+        where id = #{userId}
+    </update>
+
+    <update id="updateOrderState">
+        update booking_order
+        set state = #{state}
+        where id = #{id}
+    </update>
+
+    <update id="updateOrderStateByNo">
+        update booking_order
+        set state         = #{state},
+            pay_type      = #{payType},
+            is_paysuccess = #{paySuccess}
+        where booking_no = #{bookingNo}
+    </update>
+
+    <select id="getPayPrice" resultType="java.math.BigDecimal">
+        select pay_price
+        from booking_order
+        where booking_no = #{bookingNo}
+    </select>
+
+    <select id="getPayStatus" resultType="java.lang.Boolean">
+        select is_paysuccess
+        from booking_order
+        where booking_no = #{bookingNo}
+    </select>
+</mapper>

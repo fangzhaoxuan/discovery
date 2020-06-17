@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.discovery.dao.WalletDao">
+    <sql id="proportion">
+        id, from_coin_id, to_coin_id, amount, gmt_create, gmt_modified
+    </sql>
+    <select id="getProportion" resultType="io.thanz.entity.CoinProportionEntity">
+        select
+        <include refid="proportion"/>
+        from coin_proportion where DATEDIFF(gmt_create, NOW()) <![CDATA[ <= ]]> 0
+        and DATEDIFF(gmt_create, NOW()) <![CDATA[ > ]]> -3
+        and from_coin_id = #{fromCoinId}
+		and to_coin_id = #{toCoinId}
+		order by
+			id desc
+	    limit 0,1
+    </select>
+
+    <select id="getCoinId" resultType="java.lang.Long">
+        select id
+        from coin
+        where coin_symbol = #{coinSymbol}
+    </select>
+
+    <resultMap id="proportion" type="io.thanz.vo.CoinProportionlVO">
+        <result column="from_coin_cname" property="fromCoinCname"/>
+        <result column="to_coin_cname" property="toCoinCname"/>
+        <result column="amount" property="amount"/>
+        <result column="gmt_create" property="gmtCreate"/>
+    </resultMap>
+    <select id="getProportionHistory" resultMap="proportion">
+        select c.coin_cname from_coin_cname, i.coin_cname to_coin_cname, p.amount, p.gmt_create
+        from coin_proportion p,
+             coin c,
+             coin i
+        where p.from_coin_id = c.id
+          and p.to_coin_id = i.id
+          and p.from_coin_id = #{fromCoinId}
+          and p.to_coin_id = #{toCoinId}
+        <if test="fromDate != null and fromDate != ''">and p.gmt_create <![CDATA[>=]]> #{fromDate} </if>
+        <if test="toDate != null and toDate != ''">and p.gmt_create <![CDATA[<=]]>#{toDate} </if>
+    </select>
+
+    <resultMap id="CoinWithdrawalVO" type="io.thanz.vo.CoinWithdrawalVO">
+        <result property="coinId" column="coin_id"/>
+        <result property="coinCname" column="coin_cname"/>
+        <result property="amount" column="amount"/>
+        <result property="chargeFee" column="charge_fee"/>
+        <result property="gmtCreate" column="gmt_create"/>
+    </resultMap>
+    <select id="getWithdrawalHistory" resultMap="CoinWithdrawalVO">
+        select w.coin_id, c.coin_cname, w.amount, w.charge_fee, w.gmt_create
+        from coin_withdraw w,
+             coin c
+        where w.coin_id = c.id
+    </select>
+
+    <insert id="withdrawCoin">
+        insert into coin_withdraw (user_id, amount, coin_id, state, gmt_create, gmt_modified)
+        values (#{userId}, #{amount}, #{coinId}, 0, now(), now())
+    </insert>
+
+    <insert id="exchangeCoin">
+        insert into coin_exchange (user_id, from_coin_id, from_amount, to_coin_id, to_amount, state, gmt_create, gmt_modified)
+        VALUES (#{user.id}, #{c.fromCoinId}, #{c.fromAmount}, #{c.toCoinId}, #{c.toAmount}, 0, now(), now())
+    </insert>
+
+    <select id="queryBalanceById" resultType="java.math.BigDecimal">
+        select
+          <if test="coinId == 1">balance_szc</if>
+          <if test="coinId == 2">balance_eth</if>
+        from user where id = #{userId}
+    </select>
+
+    <update id="updateBalance">
+        update user
+           <set>
+            <if test="coinId == 1 ">balance_szc = balance_szc-#{amount},</if>
+            <if test="coinId == 2 ">balance_eth = balance_eth-#{amount},</if>
+        </set>
+    </update>
+</mapper>

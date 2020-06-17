@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.discovery.dao.CheckinDao">
+
+    <!-- 可根据自己的需求，是否要使用 -->
+    <resultMap type="io.thanz.entity.CheckinEntity" id="CheckinMap">
+        <result property="id" column="id"/>
+        <result property="bookingOrderId" column="booking_order_id"/>
+        <result property="rewardCoinId" column="reward_coin_id"/>
+        <result property="rewardAmount" column="reward_amount"/>
+        <result property="state" column="state"/>
+        <result property="gmtCreate" column="gmt_create"/>
+        <result property="gmtModified" column="gmt_modified"/>
+    </resultMap>
+    <resultMap type="io.thanz.entity.HotelEntity" id="hotel">
+        <result property="longitude" column="longitude"/>
+        <result property="latitude" column="latitude"/>
+    </resultMap>
+    <resultMap type="io.thanz.entity.BookingOrderEntity" id="order">
+        <result property="rewardCoinId" column="reward_coin_id"/>
+        <result property="rewardAmount" column="reward_amount"/>
+    </resultMap>
+    <resultMap id="orderList" type="io.thanz.vo.BookingOrderVO">
+        <result property="id" column="id"/>
+        <result property="bookingNo" column="booking_no"/>
+        <result property="hotelId" column="hotel_id"/>
+        <result property="snapshotHotelName" column="snapshot_hotel_name"/>
+        <result property="snapshotRoomType" column="snapshot_room_type"/>
+        <result property="inDate" column="in_date"/>
+        <result property="outDate" column="out_date"/>
+        <result property="checkedIn" column="is_checked_in"/>
+        <result property="hotelMainPhoto" column="photos"/>
+        <result property="rewardAmount" column="reward_amount"/>
+        <result property="state" column="state"/>
+    </resultMap>
+
+    <select id="queryHotel" resultMap="hotel">
+        select longitude, latitude
+        from booking_order o,
+             hotel h
+        where o.hotel_id = h.id
+          and o.id = #{bookingOrderId}
+    </select>
+
+    <select id="queryRewardAmount" resultMap="order">
+        select reward_coin_id, reward_amount
+        from booking_order
+        where id = #{bookingOrderId}
+    </select>
+
+    <insert id="checkInRecord">
+        insert into booking_checkin (booking_order_id, reward_coin_id, reward_amount, state, gmt_create, gmt_modified)
+        values (#{bookingOrderId}, #{rewardCoinId}, #{rewardAmount}, #{state}, now(), now())
+    </insert>
+
+    <select id="queryCheckInRecord" resultMap="CheckinMap">
+        select c.id, c.booking_order_id, c.reward_coin_id, c.reward_amount, c.state, c.gmt_create, c.gmt_modified
+        from booking_checkin c,
+             booking_order o
+        where c.booking_order_id = o.id
+          and c.state = 0
+          and o.state = 4
+    </select>
+
+    <update id="refreshUserCoin">
+        update user
+        <if test="rewardCoinId == 1">set balance_szc = balance_szc + #{rewardAmount}</if>
+        <if test="rewardCoinId == 2">set balance_eth = balance_eth + #{rewardAmount}</if>
+        where id=#{userId}
+    </update>
+
+    <update id="refreshChechInRecord">
+        update booking_checkin
+        set state = 1
+        where id = #{id}
+    </update>
+
+    <select id="queryList" resultMap="orderList">
+        select booking_order.id,
+               booking_order.booking_no,
+               booking_order.hotel_id,
+               booking_order.in_date,
+               booking_order.out_date,
+               booking_order.snapshot_hotel_name,
+               booking_order.snapshot_room_type,
+               booking_order.is_checked_in,
+               booking_order.reward_amount,
+               booking_order.state,
+               hotel.photos
+        from booking_order,
+             hotel
+        where booking_order.hotel_id = hotel.id
+          and booking_order.user_id = #{id}
+          and booking_order.state = 2
+          and booking_order.is_deleted = false
+        order by ${sort} ${order}
+    </select>
+
+    <select id="queryCheckIn" resultType="java.lang.Integer">
+        select count(*)
+        from booking_checkin
+        where booking_order_id = #{bookingOrderId}
+    </select>
+
+    <update id="updateOrderCheck">
+        update booking_order
+        set is_checked_in = 1
+        where id = #{bookingOrderId}
+    </update>
+</mapper>

@@ -1,0 +1,425 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.discovery.dao.BitaoDao">
+    <resultMap id="advertisementPhoto" type="io.thanz.vo.RotationChartVO">
+        <result property="imageUrl" column="image_url"/>
+        <result property="path" column="path"/>
+    </resultMap>
+    <select id="getAdvertisementPhoto" resultMap="advertisementPhoto">
+        select image_url, path
+        from bitao_advertisement
+        where is_deleted = 0
+          and is_published = 1
+          and is_longterm = 0
+          and now() > publish_time
+          and now() <![CDATA[<]]> expire_time
+        union
+        select image_url, path
+        from bitao_advertisement
+        where is_deleted = 0
+          and is_published = 1
+          and is_longterm = 1
+          and now() > publish_time
+    </select>
+
+    <insert id="saveKeyword">
+        insert into bitao_search_history(user_id, keyword, gmt_create, gmt_modified, is_deleted)
+            value (#{userId}, #{keyword} ,now(), now(), 0)
+    </insert>
+
+    <select id="selectCount" resultType="java.lang.Integer">
+        select count(item_id)
+        from bitao_goods_taobao
+        where item_id = #{itemId}
+    </select>
+
+    <insert id="saveGoods">
+        insert into bitao_goods_taobao (item_id, pic_url, item_url, photos, title, source, zk_final_price, has_coupon,
+                                        coupon_discount, couponed_price, coupon_start_time, coupon_end_time,
+                                        commission_rate, volume, provcity, coupon_url, shop_id, seller_id, gmt_create,
+                                        gmt_modified
+        )
+        values (#{t.itemId}, #{t.picUrl}, #{t.itemUrl}, #{t.photos}, #{t.title}, #{t.source}, #{t.zkFinalPrice},
+                #{t.hasCoupon}, #{t.couponDiscount}, #{t.couponedPrice}, #{t.couponStartTime, jdbcType = DATE},
+                #{t.couponEndTime, jdbcType = DATE}, #{t.commissionRate}, #{t.volume}, #{t.provcity}, #{t.couponUrl},
+                #{t.shopId}, #{t.sellerId}, now(), now());
+    </insert>
+
+    <update id="updateGoods">
+        update bitao_goods_taobao
+        set pic_url           = #{t.picUrl},
+            item_url          = #{t.itemUrl},
+            photos            = #{t.photos},
+            title             = #{t.title},
+            source            = #{t.source},
+            zk_final_price    = #{t.zkFinalPrice},
+            has_coupon        = #{t.hasCoupon},
+            coupon_discount   = #{t.couponDiscount},
+            couponed_price    = #{t.couponedPrice},
+            coupon_start_time = #{t.couponStartTime, jdbcType = DATE},
+            coupon_end_time   = #{t.couponEndTime, jdbcType = DATE},
+            commission_rate   = #{t.commissionRate},
+            volume            = #{t.volume},
+            provcity          = #{t.provcity},
+            coupon_url        = #{t.couponUrl},
+            shop_id           = #{t.shopId},
+            seller_id         = #{t.sellerId},
+            gmt_modified      = now()
+        where item_id = #{t.itemId}
+    </update>
+
+    <update id="updateGoodsPart">
+        update bitao_goods_taobao
+        set item_url       = #{t.itemUrl},
+            photos         = #{t.photos},
+            title          = #{t.title},
+            source         = #{t.source},
+            zk_final_price = #{t.zkFinalPrice},
+            volume         = #{t.volume},
+            provcity       = #{t.provcity},
+            seller_id      = #{t.sellerId},
+            gmt_modified   = now()
+        where item_id = #{t.itemId}
+    </update>
+
+    <select id="getShopCountBySellerId" resultType="java.lang.Integer">
+        select count(seller_id)
+        from bitao_shop
+        where seller_id = #{sellerId}
+    </select>
+
+    <insert id="savePartShop">
+        insert into bitao_shop(seller_id, shop_title, shop_dsr, source, gmt_create, gmt_modified)
+        value(#{t.sellerId}, #{t.shopTitle}, #{t.shopDsr}, #{t.source}, now(), now())
+    </insert>
+
+    <update id="updateShop">
+        update bitao_shop
+        set shop_title   = #{t.shopTitle},
+            shop_dsr     = #{t.shopDsr},
+            source       = #{t.source},
+            gmt_modified = now()
+        where seller_id = #{t.sellerId}
+    </update>
+
+    <select id="getShopIdBySellerId" resultType="java.lang.Long">
+        select id
+        from bitao_shop
+        where seller_id = #{sellerId}
+    </select>
+
+    <select id="getSearchHistory" resultType="java.lang.String">
+        select distinct(keyword)
+        from bitao_search_history
+        where user_id = #{userId}
+          and is_deleted = 0
+    </select>
+
+    <resultMap id="history" type="io.thanz.vo.SearchHistoryVO">
+        <result column="keyword" property="keyword"/>
+    </resultMap>
+    <select id="getSearchHistoryUnLogin" resultMap="history">
+        SELECT
+            keyword,
+            user_id
+        FROM
+            bitao_search_history
+        GROUP BY
+            keyword
+        HAVING
+            user_id IS NULL
+        ORDER BY
+            count(keyword) DESC
+            LIMIT 0,5
+    </select>
+
+    <update id="deleteSearchHistory">
+        update bitao_search_history
+        set is_deleted = 1
+        where user_id = #{userId}
+    </update>
+
+    <select id="getShopCount" resultType="java.lang.Integer">
+        select count(*)
+        from bitao_shop s,
+             bitao_goods_taobao b
+        where s.id = b.shop_id
+          and b.item_id = #{itemId}
+          and s.shop_logo_url != null
+    </select>
+
+    <resultMap id="shopInfo" type="io.thanz.vo.ShopVO">
+        <result column="id" property="id"/>
+        <result column="shop_title" property="shopTitle"/>
+        <result column="shop_logo_url" property="shopLogoUrl"/>
+        <result column="shop_url" property="shopUrl"/>
+        <result column="shop_dsr" property="shopDsr"/>
+        <result column="seller_id" property="sellerId"/>
+        <result column="source" property="source"/>
+    </resultMap>
+    <select id="getShopInfo" resultMap="shopInfo">
+        select s.id, s.shop_title, s.shop_logo_url, s.shop_url, s.shop_dsr/10000 shop_dsr, s.seller_id, s.source
+        from bitao_goods_taobao g,
+             bitao_shop s
+        where g.shop_id = s.id
+          and g.item_id = #{itemId}
+    </select>
+
+    <resultMap id="itemDetail" type="io.thanz.vo.ItemDetailVO">
+        <result column="id" property="id"/>
+        <result column="pic_url" property="picUrl"/>
+        <result column="item_id" property="itemId"/>
+        <result column="item_url" property="itemUrl"/>
+        <result column="photos" property="pictures"/>
+        <result column="title" property="title"/>
+        <result column="source" property="source"/>
+        <result column="zk_final_price" property="zkFinalPrice"/>
+        <result column="has_coupon" property="hasCoupon"/>
+        <result column="coupon_discount" property="couponDiscount"/>
+        <result column="couponed_price" property="couponedPrice"/>
+        <result column="coupon_start_time" property="couponStartTime"/>
+        <result column="coupon_end_time" property="couponEndTime"/>
+        <result column="commission_rate" property="commissionRate"/>
+        <result column="volume" property="volume"/>
+        <result column="provcity" property="provcity"/>
+        <result column="coupon_url" property="couponUrl"/>
+        <result column="seller_id" property="sellerId"/>
+    </resultMap>
+    <select id="getItemDetail" resultMap="itemDetail">
+        select g.id,
+               g.pic_url,
+               g.item_id,
+               g.item_url,
+               g.photos,
+               g.title,
+               g.source,
+               g.zk_final_price,
+               g.has_coupon,
+               g.coupon_discount,
+               g.couponed_price,
+               g.coupon_start_time,
+               g.coupon_end_time,
+               g.commission_rate,
+               g.volume,
+               g.provcity,
+               g.coupon_url,
+               s.seller_id
+        from bitao_goods_taobao g,
+             bitao_shop s
+        where g.shop_id = s.id
+          and g.item_id = #{itemId}
+          and g.source = #{source}
+    </select>
+
+    <select id="getItemGmtModify" resultType="java.util.Date">
+        select gmt_modified
+        from bitao_goods_taobao
+        where item_id = #{itemId}
+          and source = #{source}
+    </select>
+
+    <update id="updateShopInfo">
+        update bitao_shop
+        set seller_nick = #{t.sellerNick},
+        shop_title = #{t.shopTitle},
+        shop_logo_url = #{t.shopLogoUrl},
+        shop_url = #{t.shopUrl},
+        <if test="t.shopDsr != null">shop_dsr =#{t.shopDsr},</if>
+        gmt_modified =now()
+        where seller_id = #{t.sellerId}
+    </update>
+
+    <select id="getDetailDescriptionCount" resultType="java.lang.Integer">
+        select count(*)
+        from bitao_goods_taobao
+        where item_id = #{itemId}
+          and detail_description is not null
+          and detail_description != ''
+    </select>
+
+    <select id="getDsr" resultType="java.lang.Integer">
+        select count(*)
+        from bitao_shop
+        where seller_id = #{sellerId}
+          and shop_dsr is not null
+    </select>
+
+    <select id="getFavoriteCount" resultType="java.lang.Integer">
+        select count(*)
+        from bitao_favorite
+        where user_id = #{userId}
+          and goods_id = #{goodsId}
+          and source = #{source}
+          and is_deleted = 0
+    </select>
+
+    <update id="addDetailDescription">
+        update bitao_goods_taobao
+        set detail_description = #{detailDesc}
+        where item_id = #{itemId}
+    </update>
+
+    <insert id="addFavorite">
+        insert into bitao_favorite(user_id, goods_id, source, gmt_create, gmt_modified, is_deleted)
+        value(#{userId}, #{goodsId}, #{source}, now(), now(), 0)
+    </insert>
+
+    <select id="getCountByGoodsId" resultType="java.lang.Integer">
+        select count(*)
+        from bitao_goods_taobao
+        where id = #{goodsId}
+          and source = #{source}
+    </select>
+
+    <update id="deleteFavorites" parameterType="java.util.List">
+        update bitao_favorite set is_deleted = 1 where id in
+        <foreach collection="list" item="item" separator="," open="(" close=")" index="">
+            #{item, jdbcType = BIGINT}
+        </foreach>
+    </update>
+
+    <resultMap id="favorite" type="io.thanz.vo.FavoriteVO">
+        <result column="id" property="id"/>
+        <result column="item_id" property="itemId"/>
+        <result column="pic_url" property="picUrl"/>
+        <result column="title" property="title"/>
+        <result column="source" property="source"/>
+        <result column="coupon_url" property="couponUrl"/>
+        <result column="couponed_price" property="couponedPrice"/>
+    </resultMap>
+    <select id="getFavorites" resultMap="favorite">
+        select
+            f.id,
+            g.item_id,
+            g.pic_url,
+            g.title,
+            g.source,
+            g.coupon_url,
+            g.couponed_price
+        from bitao_favorite f,
+             bitao_goods_taobao g
+        where f.goods_id = g.id
+          and f.user_id = #{userId}
+          and f.is_deleted = 0
+        order by
+            ${sort} ${order}
+    </select>
+
+    <insert id="saveTaobaoUser">
+        insert into bitao_user_taobao(user_id, third_user_id, third_open_uid, access_token, access_token_expire_time,
+                                      refresh_token, refresh_token_expire_time, gmt_create, gmt_modified)
+        value(#{u.userId}, #{u.thirdUserId}, #{u.thirdOpenUid}, #{u.accessToken}, #{u.accessTokenExpireTime},
+              #{u.refreshToken}, #{u.refreshTokenExpireTime}, now(), now())
+    </insert>
+
+    <resultMap id="taobaoUser" type="io.thanz.entity.TaobaoUserEntity">
+        <result property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="thirdUserId" column="third_user_id"/>
+        <result property="thirdOpenUid" column="third_open_uid"/>
+        <result property="accessToken" column="access_token"/>
+        <result property="accessTokenExpireTime" column="access_token_expire_time"/>
+        <result property="refreshToken" column="refresh_token"/>
+        <result property="refreshTokenExpireTime" column="refresh_token_expire_time"/>
+        <result property="gmtCreate" column="gmt_create"/>
+        <result property="gmtModified" column="gmt_modified"/>
+    </resultMap>
+    <select id="getTaobaoUser" resultMap="taobaoUser">
+        select id,
+               user_id,
+               third_user_id,
+               third_open_uid,
+               access_token,
+               access_token_expire_time,
+               refresh_token,
+               refresh_token_expire_time,
+               gmt_create,
+               gmt_modified
+        from bitao_user_taobao
+        where user_id = #{userId}
+    </select>
+
+    <update id="updateTaobaoUser">
+        update bitao_user_taobao
+        set
+            third_user_id             =#{u.thirdUserId},
+            third_open_uid            =#{u.thirdOpenUid},
+            access_token              =#{u.accessToken},
+            access_token_expire_time  =#{u.accessTokenExpireTime},
+            refresh_token             =#{u.refreshToken},
+            refresh_token_expire_time =#{u.refreshTokenExpireTime},
+            gmt_modified              =now()
+        where user_id = #{u.userId}
+    </update>
+
+    <select id="getDescription" resultType="java.lang.String">
+        select detail_description
+        from bitao_goods_taobao
+        where item_id = #{itemId}
+          and source = #{source}
+    </select>
+
+    <select id="getTaobaoUserId" resultType="java.lang.String">
+        select third_user_id
+        from bitao_user_taobao
+        where user_id = #{userId}
+    </select>
+
+    <resultMap id="orders" type="io.thanz.vo.TaobaoOrderPageVO">
+        <result column="id" property="id"/>
+        <result column="item_id" property="itemId"/>
+        <result column="pic_url" property="picUrl"/>
+        <result column="title" property="title"/>
+        <result column="zk_final_price" property="zkFinalPrice"/>
+        <result column="couponed_price" property="couponedPrice"/>
+        <result column="commission_rate" property="commissionRate"/>
+        <result column="coupon_url" property="couponUrl"/>
+        <result column="booking_no" property="bizOrderId"/>
+        <result column="state" property="state"/>
+    </resultMap>
+    <select id="getOrders" resultMap="orders">
+        select o.id,
+               t.item_id,
+               t.pic_url,
+               t.title,
+               t.zk_final_price,
+               t.couponed_price,
+               t.commission_rate,
+               t.coupon_url,
+               o.booking_no,
+               o.state
+        from bitao_order o,
+             bitao_goods_taobao t
+        where o.goods_id = t.id
+          and o.is_deleted = 0
+          and o.user_id = #{userId}
+        <if test="state !=null and state !='' and state != -1">and state = #{state}</if>
+    </select>
+
+    <select id="getOrderCount" resultType="java.lang.Integer">
+        select count(*)
+        from bitao_order
+        where id = #{id}
+          and user_id = #{userId}
+    </select>
+
+    <insert id="userTrack">
+        insert into bitao_goods_track(user_id, goods_id, source, gmt_create, gmt_modified)
+                value (#{userId}, #{goodsId}, #{source}, now(), now())
+    </insert>
+
+    <update id="deleteOrder">
+        update bitao_order
+        set is_deleted   = 1,
+            gmt_modified = now()
+        where user_id = #{userId}
+          and id = #{id}
+    </update>
+
+    <select id="getThirdUserIdCount" resultType="java.lang.Integer">
+        select count(*)
+        from bitao_user_taobao
+        where third_user_id = #{thirdUserId}
+    </select>
+</mapper>

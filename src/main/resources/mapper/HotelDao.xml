@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.discovery.dao.HotelDao">
+    <resultMap id="cities" type="io.thanz.vo.CityVO">
+        <result column="adcode" property="adcode"/>
+        <result column="name" property="cityName"/>
+        <result column="longitude" property="longitude"/>
+        <result column="latitude" property="latitude"/>
+    </resultMap>
+    <select id="getCities" resultMap="cities">
+        select adcode, name, longitude, latitude
+        from city
+        where superior != 0
+        order by
+            CONVERT (name USING gbk) asc
+    </select>
+
+    <select id="getHotels" resultType="java.util.Map">
+        select hotel.id, hotel.name, hotel.photos, min(hotel_room.price) price,
+                ROUND(6378.138 * 2 * ASIN(SQRT(POW(SIN((hotel.latitude * PI() / 180 - #{latitude} * PI() / 180) / 2),
+                2) + COS(hotel.latitude * PI() / 180) * COS(#{latitude} * PI() / 180) * POW(SIN((hotel.longitude
+                * PI() / 180 - #{longitude} * PI() / 180) / 2),2))) * 1000) distance
+        from hotel left join hotel_room on hotel.id = hotel_room.hotel_id where hotel.state = 1
+        <if test="keyword != null and keyword.trim() != ''">
+            and hotel.name like #{keyword} or hotel.address like #{keyword}
+        </if>
+        group by hotel.id, hotel.name, hotel.photos
+        order by ${sort} ${order}
+    </select>
+
+    <resultMap id="hotelDetail" type="io.thanz.entity.HotelEntity">
+        <result column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="longitude" property="longitude"/>
+        <result column="latitude" property="latitude"/>
+        <result column="address" property="address"/>
+        <result column="introduction" property="introduction"/>
+        <result column="order_attention" property="orderAttention"/>
+        <result column="photos" property="photos"/>
+        <result column="state" property="state"/>
+        <result column="reward_ratio" property="rewardRatio"/>
+    </resultMap>
+    <select id="getHotelDetails" resultMap="hotelDetail">
+        select id,
+               name,
+               longitude,
+               latitude,
+               address,
+               introduction,
+               order_attention,
+               photos,
+               state,
+               reward_ratio
+        from hotel
+        where state = 1
+              and id = #{id}
+    </select>
+
+    <resultMap id="facility" type="io.thanz.entity.HotelFacilityEntity">
+        <result property="type" column="type"/>
+        <result property="content" column="content"/>
+    </resultMap>
+    <select id="getFacility" resultMap="facility">
+        select d.value type, f.content
+        from hotel_facility f,
+             sys_dict d
+        where f.type = d.code
+          and d.entity_name = 'Facility'
+          and d.field_name = 'type'
+          and f.hotel_id = #{id}
+    </select>
+
+    <select id="getFacilityForP" resultType="java.util.Map">
+        select content from hotel_facility where hotel_id = #{id}
+    </select>
+
+    <select id="specialRecommend" resultType="java.util.Map">
+        select hotel.id, hotel.name, hotel.photos, hotel.longitude, hotel.latitude, min(hotel_room.price) price
+        from hotel
+                 left join hotel_room on hotel.id = hotel_room.hotel_id
+        group by hotel.id, hotel.id, hotel.name, hotel.photos, hotel.longitude, hotel.latitude
+        order by ${sort} ${order}
+    </select>
+
+    <select id="getCenterLocation" resultType="java.util.Map">
+        select longitude, latitude
+        from city
+        where adcode = #{adcode}
+    </select>
+
+    <select id="popularRecommend" resultType="java.util.Map">
+        select t.*
+        from (select hotel.id, hotel.name, hotel.photos, min(hotel_room.price) price,
+                ROUND(6378.138 * 2 * ASIN(SQRT(POW(SIN((hotel.latitude * PI() / 180 - city.latitude * PI() / 180) / 2),
+                    2) + COS(hotel.latitude * PI() / 180) * COS(city.latitude * PI() / 180) * POW(SIN((hotel.longitude
+                    * PI() / 180 - city.longitude * PI() / 180) / 2),2))) * 1000) AS distance
+              from hotel,
+                   city,
+                   hotel_room
+              where hotel.id = hotel_room.hotel_id
+                and city.adcode = #{adcode}
+              group by hotel.id, hotel.name, hotel.photos, distance) t
+        where distance <![CDATA[ <= ]]> #{dis}
+    </select>
+
+    <select id="getOriginalPrice" resultType="java.math.BigDecimal">
+        select price
+        from hotel_room
+        where id = #{roomId}
+    </select>
+
+    <select id="getRewardRatio" resultType="java.math.BigDecimal">
+        select reward_ratio
+        from hotel
+        where id = #{hotelId}
+    </select>
+
+    <insert id="createOrder">
+        insert into booking_order (booking_no,
+                                   hotel_id,
+                                   room_id,
+                                   user_id,
+                                   in_date,
+                                   out_date,
+                                   reserve_no,
+                                   snapshot_hotel_name,
+                                   snapshot_room_type,
+                                   snapshot_room_feature,
+                                   is_discount,
+                                   discount_amount,
+                                   discount_coin_id,
+                                   original_price,
+                                   pay_price,
+                                   state,
+                                   reward_amount,
+                                   reward_coin_id,
+                                   is_checked_in,
+                                   gmt_create,
+                                   gmt_modified)
+        value (#{bookingNo},
+               #{c.hotelId},
+               #{c.roomId},
+               #{userId},
+               #{c.inDate},
+               #{c.outDate},
+               #{c.reserveNo},
+               #{c.snapshotHotelName},
+               #{c.snapshotRoomType},
+               #{c.snapshotRoomFeature},
+               #{c.discount},
+               #{c.discountAmount},
+               #{c.discountCoinId},
+               #{c.originalPrice},
+               #{payPrice},
+               0,
+               #{rewardAmount},
+               1,
+               0,
+               now(),
+               now())
+    </insert>
+    <resultMap id="rooms" type="io.thanz.entity.RoomEntity">
+        <result property="id" column="id"/>
+        <result property="hotelId" column="hotel_id"/>
+        <result property="typeStr" column="type_str"/>
+        <result property="feature" column="feature"/>
+        <result property="photos" column="photos"/>
+        <result property="price" column="price"/>
+        <result property="stock" column="stock"/>
+    </resultMap>
+    <select id="getRooms" resultMap="rooms">
+        select id, hotel_id, type_str, feature, photos, price, stock
+        from hotel_room
+        where hotel_id = #{id}
+    </select>
+
+    <select id="getHotelId" resultType="java.lang.Long">
+        select hotel_id
+        from booking_order
+        where id = #{id}
+    </select>
+
+    <insert id="insertCustomers">
+        insert into booking_customer(booking_order_id, name, mobile, gmt_create, gmt_modified) values
+          <foreach collection="customers" item="customer" separator=",">
+              (#{bookingOrderId}, #{customer.name}, #{customer.mobile}, now(), now())
+          </foreach>
+    </insert>
+
+    <select id="selectIdByBookingNo" resultType="java.lang.Long">
+        select id
+        from booking_order
+        where booking_no = #{bookingNo}
+    </select>
+
+    <select id="getOrderCount" resultType="java.lang.Integer">
+        select count(*)
+        from booking_comment
+        where booking_order_id = #{id}
+    </select>
+
+    <select id="getUserId" resultType="java.lang.Long">
+        select user_id
+        from booking_order
+        where id = #{id}
+    </select>
+
+    <insert id="orderComment">
+        insert into booking_comment (booking_order_id, user_id, comment, score, hotel_id, gmt_create, gmt_modified)
+        values (#{bookingOrderId}, #{userId}, #{c.comment}, #{c.score}, #{hotelId}, now(), now())
+    </insert>
+
+    <resultMap id="comments" type="io.thanz.vo.CommentVO">
+        <result property="id" column="id"/>
+        <result property="bookingOrderId" column="booking_order_id"/>
+        <result property="userName" column="name"/>
+        <result property="comment" column="comment"/>
+        <result property="score" column="score"/>
+        <result property="gmtCreate" column="gmt_create"/>
+        <result property="gmtModified" column="gmt_modified"/>
+    </resultMap>
+    <select id="getComments" resultMap="comments">
+        select booking_comment.id,
+               booking_comment.booking_order_id,
+               user.name,
+               booking_comment.comment,
+               booking_comment.score,
+               booking_comment.gmt_create,
+               booking_comment.gmt_modified
+        from booking_comment,
+             user
+        where booking_comment.user_id = user.id
+          and booking_comment.hotel_id = #{id}
+        order by ${sort} ${order}
+    </select>
+
+    <select id="getAvgScore" resultType="java.lang.Integer">
+        select avg(score)
+        from booking_comment
+        where hotel_id = #{id}
+    </select>
+
+    <select id="getRatioAndPrice" resultType="java.util.Map">
+        select h.reward_ratio rewardRatio,min(r.price) price
+        from hotel h,hotel_room r
+        where h.id = r.hotel_id and h.id = #{id}
+    </select>
+
+    <select id="getRatio" resultType="java.math.BigDecimal">
+        select reward_ratio
+        from hotel
+        where id = #{id}
+    </select>
+</mapper>

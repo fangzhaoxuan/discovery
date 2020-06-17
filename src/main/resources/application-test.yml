@@ -1,0 +1,57 @@
+spring:
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    driverClassName: com.mysql.jdbc.Driver
+    druid:
+      url: jdbc:mysql://localhost:3306/thanz?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8
+      username: ${DB_USERNAME}
+      password: 123456
+      initial-size: 10
+      max-active: 100
+      min-idle: 10
+      max-wait: 60000
+      pool-prepared-statements: true
+      max-pool-prepared-statement-per-connection-size: 20
+      time-between-eviction-runs-millis: 60000
+      min-evictable-idle-time-millis: 300000
+      validation-query: SELECT 1 FROM DUAL
+      test-while-idle: true
+      test-on-borrow: false
+      test-on-return: false
+      stat-view-servlet:
+        enabled: true
+        url-pattern: /druid/*
+        #login-username: admin
+        #login-password: admin
+      filter:
+        stat:
+          log-slow-sql: true
+          slow-sql-millis: 1000
+          merge-sql: true
+        wall:
+          config:
+            multi-statement-allow: true
+
+message:
+  url: https://api.dingdongcloud.com/v2/sms/single_send
+  apikey: 2437b2a2a045c916fe31d978310eaf19
+
+alipay:
+  appId: 2016092000555158
+  merchantPrivateKey:    /tbBhz2STPyA+kXrliJL2MpQ28o2GkR8yG0DpzcJYnIMjrwbYcOGrW5L6VuGDeSPmJNUibO/OWOQ0oGqA5u2o5h+vTXkXBZK837dlkY9Sw18EVUJcs/af9U0o3nutpT2z8ol9sYsdJyWARG8oXVpB34EXNQ0CJMr2QmgWsKZsDfaZ6WgtzJP1ZsJqqYTRnD2TFxPv7fEL6zt9od3Fy9M9aW9s/9lefP/68fqWzvV//OcDDCfo+4Y9Fawd+JdaoKHIOC+91XyF/4K+3kFVtxUJuIuiDtX2cs28Lsri3/6HAgMBAAECggEALf1GAgV4UglEMRTRVZyek7KmaMxrVbHkIClsmEYsC+mg5VLoorJ0y3DuuVdRypC06v4d/HbIvpOI26aVtcj7Ya5sgdO0+p0l3I89VrX1SbPGXxZS9iH3UNlSnH6zjJmzwSc4/Mcmwwhg6QGdsGUF6FawlWt3Lu8AmBIMq0KAEtN07gvmsT+CaB2mBqC5PfI5dPvve/TRJLs+Arua6SjmNHhAck+K0MdLWFDYbYGs+uPEsWkyDrOak8IAHocNhm50Tml288kJhKVgL9/iNBVyPfKm2BA16Tj/aSsBU5gz4oMVNl4w9L6pZUHtjT965lqIG404uHXr9kfp8ZgCCXQvgQKBgQDiRlmog1kLyXCHvMB+/uuLXm9OVpLwzAZhO2dDkG4eu79BgZG6p99eNeEudp/l8Tlnd5rsLTiwAFd4CVKhTUXgCfpJ+3/Vid3pwrWPEi+VilyRuleXlyPIVEBMEfzSpuwBxcddPyqAKMBRknYszo4FhGt4oyi8y1t0vQOt1jk+RwKBgQCsQ1X0yeXQ3yN3wFmjLbttkXd11cYqNdRMwuRhkbUo1ie3gZZ6CNQbM9+hc0eZnlsObSSBW9Iq7QXlGRgNY9gnGdtFSwNNaHEjuyAirqu78ZRsyUEW2fwm15bJw0HA0B5qvAfYL5pq2R+m7BERadLikOkGP5D1M0Qko6HkEAYdwQKBgQCS+K7zzZzhEw6MnAVMd7f25nfVolX/IgZi0XrZX86nF7u6iLZnTvK+9rA0xchGStDGa+Gs1hKj/xTRWvzY2KAyTUjNFRaLVOlXFKlpLJ7Luvs1jJuoUvti+5Zn0qctDE7vN8+uuYCZjd6dHUy0/dUxsDk+OnwTZOMaiEsDdsnnsQKBgQCFt18pvO8fy5YEhtMNz5oF2z0XwvEoItDBJSeSdUBiipoZ4AWmhOPgmculz45suHeGI0KLB3OEzqgcxfXdrvtCnteOWkQd+kyYp9CyG1RDd6r3JuHXky4gGIl75I1N1j9GKt8L+SeseQ4QzH4TPknshP/dUcp8C2eB6WLpXWbiAQKBgQDKvS6zdVc1xy4hYuDM2TKB6hM9BTjQhXGKOg9gN6GAZ8upbINkduj4JWzCCG21gGeq+HlBPnTG+KNASwSyshxwaEbdlxpNetba+QO9sG80xpqJs5A3Px89Em9e5jV9XtrNLIa59UWsmUf73oB2k00ELJUsCu/flOwvudfZi9hsWg==
+  alipayPublicKey: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAso7qbWOksZemxDQJLy6Y6+zOa7knSv5qZ80v27GbUFqA8+9rXbMxFsx7LRvqAXwcaz38htwOexvCxjdKUb91HkC48NgfJ5M1BZzLgKwFuO+A79MOOMJWVQeUKO5AyGUAsjdrzQMdgqwSzzHdr+DjuBqV3SIvhSzlRjcWOkN5M4ic3s7STvMQDimLjBR5n/ZJfcqE9vsAbex1Ne7lROLfAdCVcDicPhsU6aYEwz1bsrfIcWKNFQe2w46X5I4JiglZQFPjN3AR4XoaEGHT4U8x+qby+Yxq/uTqfaFaJOZ/HZ++pzD9GpLLUm2IB61KwwqoqYyFF+B0mF6hEw8TCH5gKQIDAQAB
+  notifyUrl: https://AuthorizationTaobaoForm.vaiwan.com:8081/v1/notify
+  return_url:
+  gatewayUrl: https://openapi.alipaydev.com/gateway.do
+
+
+wechatpay:
+  appId: wx399ce4c35a00290f
+  appSecret: d419c10d915fdb6b9be2dc75ec40350f
+  appKey: 981BF84C66A78E328FDE7469F697B4DA
+  mchId: 1503803601
+  notifyUrl: http://www.51shanzhu.com/v1/wechatPaynotify
+  ufdorUrl: https://api.mch.weixin.qq.com/pay/unifiedorder
+  orderQuery: https://api.mch.weixin.qq.com/pay/orderquery
+  clientAccessTokenUrl: https://api.weixin.qq.com/sns/oauth2/access_token?appid=wx399ce4c35a00290f&secret=d419c10d915fdb6b9be2dc75ec40350f&code=CODE&grant_type=authorization_code
+  redirectUrl:

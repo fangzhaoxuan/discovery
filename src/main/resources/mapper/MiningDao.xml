@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.discovery.dao.MiningDao">
+
+    <!-- 可根据自己的需求，是否要使用 -->
+    <resultMap type="io.thanz.entity.UserDailyCheckinEntity" id="userDailyCheckinMap">
+        <result property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="rewardCoinId" column="reward_coin_id"/>
+        <result property="rewardAmount" column="reward_amount"/>
+        <result property="state" column="state"/>
+        <result property="gmtCreate" column="gmt_create"/>
+        <result property="gmtModified" column="gmt_modified"/>
+    </resultMap>
+
+    <sql id="DailyCheckIn">
+        id, user_id, reward_coin_id, reward_amount, state, gmt_create, gmt_modified
+    </sql>
+
+    <insert id="userDailyCheckIn">
+        insert into user_daily_checkin (user_id, reward_coin_id, reward_amount, gmt_create, gmt_modified)
+        values (#{userId}, #{rewardCoinId}, #{rewardAmount}, now(), now())
+    </insert>
+
+
+    <resultMap id="invitations" type="io.thanz.vo.InvitationVO">
+        <result column="mobile" property="invitedPhone"/>
+        <result column="gmt_create" property="gmtCreate"/>
+    </resultMap>
+    <select id="invitations" resultMap="invitations">
+        select u.mobile, i.gmt_create
+        from coin_invitation i,
+             user u
+        where i.invited_id = u.id
+          and i.user_id = #{userId}
+    </select>
+
+    <update id="dailyCheckInReward">
+        update user
+        set balance_szc = balance_szc + 100
+        where id = #{userId}
+    </update>
+
+    <select id="isCheckInToday" resultType="java.lang.Integer">
+        select count(*)
+        from user_daily_checkin
+        where user_id = #{userId}
+          and date(gmt_create) = curdate()
+    </select>
+
+    <select id="getDailyCheckInStatus" resultType="java.lang.Integer">
+        select count(*)
+        from user_daily_checkin
+        where user_id = #{userId}
+              and
+              date (gmt_create) = curdate();
+    </select>
+</mapper>

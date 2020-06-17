@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.discovery.dao.UserDao">
+    <sql id="user">
+        id, name, mobile, password, balance_szc, balance_eth, is_invited, state, gmt_create, gmt_modified
+    </sql>
+
+    <select id="selectUserByPhone" resultMap="userResultMap">
+        select
+        <include refid="user"/>
+        from user where mobile = #{mobile}
+    </select>
+
+    <update id="rewardInvitation">
+        update user
+        set balance_szc = balance_szc + 100
+        where id = #{id}
+    </update>
+
+    <insert id="insertUser" parameterType="io.thanz.entity.UserEntity">
+        insert into user (name, mobile, password, balance_szc, balance_eth, is_invited, state, gmt_create, gmt_modified)
+        values (#{name}, #{mobile}, #{password}, #{balanceSzc}, #{balanceEth}, #{invited}, #{state}, now(), now())
+    </insert>
+
+    <select id="selectId" parameterType="java.lang.String" resultType="java.lang.Long">
+        select id
+        from user
+        where mobile = #{mobile}
+    </select>
+
+    <update id="setPassword">
+        update user
+        set password = #{password}
+        where id = #{id}
+    </update>
+
+    <insert id="invitationRecord">
+        insert into coin_invitation (user_id, invited_id, gmt_create, gmt_modified)
+        values (#{inviteId}, #{loginId}, now(), now())
+    </insert>
+
+    <insert id="loginRecord">
+        insert into user_login (user_id, login_type, gmt_create, gmt_modified)
+        values (#{id}, #{loginType}, now(), now())
+    </insert>
+
+    <update id="updateUser">
+        update user
+        <set>
+            <if test="name != null ">name = #{name},</if>
+            <if test="password != null ">password = #{password},</if>
+            <if test="mobile != null ">mobile = #{mobile},</if>
+            gmt_modified = now()
+        </set>
+        where id = #{id}
+    </update>
+    <resultMap type="io.thanz.entity.UserEntity" id="userResultMap">
+        <result property="invited" column="is_invited"/>
+    </resultMap>
+
+    <select id="queryInviteCount" resultType="java.lang.Integer">
+        select count(*)
+        from coin_invitation
+        where user_id = #{id}
+    </select>
+
+    <resultMap id="orders" type="io.thanz.vo.OrderVO">
+        <result property="id" column="id"/>
+        <result property="bookingNo" column="bookingNo"/>
+        <result property="hotelName" column="hotelName"/>
+        <result property="roomType" column="roomType"/>
+        <result property="price" column="price"/>
+        <result property="photo" column="photo"/>
+        <result property="hotelId" column="hotelId"/>
+        <result property="state" column="state"/>
+        <result property="reward" column="reward"/>
+        <result property="inDate" column="inDate"/>
+        <result property="outDate" column="outDate"/>
+    </resultMap>
+    <select id="getOrders" resultMap="orders">
+        select booking_order.id                  id,
+               booking_order.booking_no          bookingNo,
+               booking_order.snapshot_hotel_name hotelName,
+               booking_order.snapshot_room_type  roomType,
+               booking_order.pay_price           price,
+               booking_order.reward_amount       reward,
+               booking_order.in_date             inDate,
+               booking_order.out_date            outDate,
+               hotel.photos                      photo,
+               booking_order.hotel_id            hotelId,
+               booking_order.state               state
+        from booking_order, hotel
+        where booking_order.hotel_id = hotel.id
+              and booking_order.user_id = ${userId}
+              and booking_order.is_deleted = false
+        <if test="state != -1 and state != null "> and booking_order.state = #{state}</if>
+        order by ${sort} ${order}
+    </select>
+
+
+    <resultMap id="orderDetail" type="io.thanz.entity.BookingOrderEntity">
+        <id column="id" property="id"/>
+        <result column="hotel_id" property="hotelId"/>
+        <result column="booking_no" property="bookingNo"/>
+        <result column="in_date" property="inDate"/>
+        <result column="out_date" property="outDate"/>
+        <result column="reserve_no" property="reserveNo"/>
+        <result column="snapshot_hotel_name" property="snapshotHotelName"/>
+        <result column="snapshot_room_type" property="snapshotRoomType"/>
+        <result column="snapshot_room_feature" property="snapshotRoomFeature"/>
+        <result column="is_discount" property="discount"/>
+        <result column="discount_coin_id" property="discountCoinId"/>
+        <result column="discount_amount" property="discountAmount"/>
+        <result column="original_price" property="originalPrice"/>
+        <result column="pay_price" property="payPrice"/>
+        <result column="pay_type" property="payType"/>
+        <result column="is_paysuccess" property="paysuccess"/>
+        <result column="state" property="state"/>
+        <result column="reward_coin_id" property="rewardCoinId"/>
+        <result column="reward_amount" property="rewardAmount"/>
+        <result column="is_checked_in" property="checkedIn"/>
+        <collection column="id" property="customers" ofType="io.thanz.entity.BookingCustomerEntity"
+                    select="getCustomer">
+        </collection>
+    </resultMap>
+    <sql id="orderDetail">
+        o.id,
+        o.hotel_id,
+        o.booking_no,
+        o.in_date,
+        o.out_date,
+        o.reserve_no,
+        o.snapshot_hotel_name,
+        o.snapshot_room_type,
+        o.snapshot_room_feature,
+        o.is_discount,
+        o.discount_amount,
+        o.discount_coin_id,
+        c.coin_cname discountCoinCname,
+        o.original_price,
+        o.pay_price,
+        o.pay_type,
+        o.is_paysuccess,
+        o.state,
+        o.reward_coin_id,
+        i.coin_cname rewardCoinCname,
+        o.reward_amount,
+        o.is_checked_in
+    </sql>
+    <select id="getOrderDetail" resultMap="orderDetail">
+        select
+        <include refid="orderDetail"/>
+        from booking_order o,coin c,coin i
+        where
+        o.discount_coin_id = c.id and o.reward_coin_id = i.id and o.id = #{id}
+        and o.is_deleted = false and o.user_id = #{userId}
+    </select>
+    <select id="getCustomer" parameterType="java.lang.Long" resultType="io.thanz.entity.BookingCustomerEntity">
+        select name, mobile
+        from booking_customer
+        where booking_order_id = #{id}
+    </select>
+
+    <update id="setOpenid">
+        update user
+        set open_id = #{openid}
+        where id = #{id}
+    </update>
+
+    <select id="getOpenid" resultType="java.lang.String">
+        select open_id
+        from user
+        where id = #{id}
+    </select>
+
+    <update id="deleteOrder">
+        update booking_order
+        set is_deleted = true
+        where id = #{id}
+    </update>
+
+    <select id="getOrderDelete" resultType="java.lang.Boolean">
+        select is_deleted
+        from booking_order
+        where id = #{id}
+    </select>
+</mapper>
